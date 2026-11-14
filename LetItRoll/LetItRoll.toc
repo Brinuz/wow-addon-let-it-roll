@@ -6,6 +6,7 @@
 ## Author: brinuz
 ## Version: 0.1.0
 ## SavedVariables: LetItRollDB
+## X-License: GPL-3.0-or-later
 ## AddonCompartmentFunc: LetItRoll_OnAddonCompartmentClick
 
 # Files load in this order, each receiving (addonName, LIR) as its `...`.

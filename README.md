@@ -39,3 +39,7 @@ ln -s "$PWD/LetItRoll" "<WoW>/_forever_/Interface/AddOns/LetItRoll"
 ```
 
 `.luarc.json` points the Lua language server at Blizzard's UI code, exported from the client with `exportInterfaceFiles code` (launch with `-console`). Update the path in it to match your install.
+
+## License
+
+[GPL-3.0-or-later](LICENSE)
