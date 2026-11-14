@@ -1,0 +1,22 @@
+## Interface: 16001
+## Title: Let It Roll
+## Notes: A better Need/Greed window: roll on every item in one place, see each player's pick live, and keep a history of who won.
+## Category: Loot
+## IconAtlas: lootroll-toast-icon-need-up
+## Author: brinuz
+## Version: 0.1.0
+## SavedVariables: LetItRollDB
+## AddonCompartmentFunc: LetItRoll_OnAddonCompartmentClick
+
+# Files load in this order, each receiving (addonName, LIR) as its `...`.
+# Core first: it creates the shared table, the saved settings and the events
+# the other files hook into.
+Core.lua
+Chat.lua
+Usability.lua
+Data.lua
+Preview.lua
+# UI.lua defines the mixins UI.xml's frames name, so it loads first.
+UI.lua
+UI.xml
+Settings.lua

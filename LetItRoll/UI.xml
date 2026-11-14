@@ -1,0 +1,196 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<!--
+	Everything here is built from Blizzard's own templates and atlases:
+	  * the window is DefaultPanelFlatTemplate, the same panel as Blizzard's
+	    loot history (GroupLootHistoryFrame, Blizzard_FrameXML/Mainline/LootHistory.xml);
+	  * item cards are LootHistoryElementTemplate itself;
+	  * player lines are LootHistoryRollTooltipLineTemplate (the rows of the
+	    loot history tooltip);
+	  * Need/Greed/Pass are LootRollButtonTemplate with the roll popup's atlases
+	    (Blizzard_UIPanels_Game/Mainline/GroupLootFrame.xml);
+	  * the timer is the loot history timer's atlases.
+	-->
+
+	<!-- A roll button: the template's OnClick is replaced in UI.lua so the
+	     preview can use the same buttons without calling RollOnLoot. -->
+	<Button name="LetItRollRollButtonTemplate" inherits="LootRollButtonTemplate" virtual="true">
+		<Size x="32" y="32"/>
+	</Button>
+
+	<Frame name="LetItRollActiveRowTemplate" mixin="LetItRollActiveRowMixin" virtual="true">
+		<Size x="300" y="80"/>
+		<Frames>
+			<Frame parentKey="Card" inherits="LootHistoryElementTemplate">
+				<Size x="218" y="58"/>
+				<Anchors>
+					<Anchor point="TOPLEFT"/>
+				</Anchors>
+			</Frame>
+			<Frame parentKey="LootButtonContainer">
+				<Size x="76" y="58"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Card" relativePoint="TOPRIGHT" x="2" y="0"/>
+				</Anchors>
+				<Frames>
+					<Button parentKey="NeedButton" inherits="LetItRollRollButtonTemplate" id="1">
+						<Anchors>
+							<Anchor point="TOPLEFT" x="4" y="-1"/>
+						</Anchors>
+						<NormalTexture atlas="lootroll-toast-icon-need-up"/>
+						<HighlightTexture atlas="lootroll-toast-icon-need-highlight" alphaMode="ADD"/>
+						<PushedTexture atlas="lootroll-toast-icon-need-down"/>
+					</Button>
+					<Button parentKey="PassButton" inherits="LetItRollRollButtonTemplate" id="0">
+						<Anchors>
+							<Anchor point="LEFT" relativeKey="$parent.NeedButton" relativePoint="RIGHT" x="6" y="2"/>
+						</Anchors>
+						<NormalTexture atlas="lootroll-toast-icon-pass-up"/>
+						<HighlightTexture atlas="lootroll-toast-icon-pass-highlight" alphaMode="ADD"/>
+						<PushedTexture atlas="lootroll-toast-icon-pass-down"/>
+					</Button>
+					<Button parentKey="GreedButton" inherits="LetItRollRollButtonTemplate" id="2">
+						<Anchors>
+							<Anchor point="TOP" relativeKey="$parent.NeedButton" relativePoint="BOTTOM" x="0" y="5"/>
+						</Anchors>
+						<NormalTexture atlas="lootroll-toast-icon-greed-up"/>
+						<HighlightTexture atlas="lootroll-toast-icon-greed-highlight" alphaMode="ADD"/>
+						<PushedTexture atlas="lootroll-toast-icon-greed-down"/>
+					</Button>
+					<Button parentKey="TransmogButton" inherits="LetItRollRollButtonTemplate" id="4" hidden="true">
+						<Anchors>
+							<Anchor point="CENTER" relativeKey="$parent.GreedButton" relativePoint="CENTER"/>
+						</Anchors>
+						<NormalTexture atlas="lootroll-toast-icon-transmog-up"/>
+						<HighlightTexture atlas="lootroll-toast-icon-transmog-highlight" alphaMode="ADD"/>
+						<PushedTexture atlas="lootroll-toast-icon-transmog-down"/>
+					</Button>
+				</Frames>
+			</Frame>
+			<Frame parentKey="Timer">
+				<Size x="296" y="13"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Card" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="Background" atlas="lootroll-timer-background" setAllPoints="true"/>
+					</Layer>
+					<Layer level="ARTWORK">
+						<Texture parentKey="Fill" atlas="lootroll-timer-fill" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="LEFT" x="2" y="0"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture parentKey="Border" atlas="lootroll-timer-border" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Frame parentKey="Players">
+				<Size x="296" y="1"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Timer" relativePoint="BOTTOMLEFT" x="8" y="-6"/>
+				</Anchors>
+			</Frame>
+		</Frames>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="WaitingText" inherits="GameFontNormal" justifyH="LEFT" justifyV="TOP" wordwrap="true">
+					<Size x="284" y="0"/>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad method="OnLoad"/>
+			<OnUpdate method="OnUpdate"/>
+		</Scripts>
+	</Frame>
+
+	<Frame name="LetItRollHistoryRowTemplate" inherits="LootHistoryElementTemplate" mixin="LetItRollHistoryRowMixin" virtual="true">
+		<Size x="300" y="58"/>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="When" inherits="GameFontDisableSmall" justifyH="RIGHT">
+					<Anchors>
+						<Anchor point="TOPRIGHT" x="-8" y="-7"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+	</Frame>
+
+	<Frame name="LetItRollFrame" mixin="LetItRollFrameMixin" inherits="DefaultPanelFlatTemplate" movable="true" resizable="true" registerForDrag="LeftButton" clampedToScreen="true" enableMouse="true" parent="UIParent" frameStrata="HIGH" toplevel="true" hidden="true">
+		<Size x="340" y="520"/>
+		<Anchors>
+			<Anchor point="TOPLEFT" x="150" y="-150"/>
+		</Anchors>
+		<ResizeBounds>
+			<minResize>
+				<AbsDimension x="340" y="260"/>
+			</minResize>
+			<maxResize>
+				<AbsDimension x="340" y="900"/>
+			</maxResize>
+		</ResizeBounds>
+		<Scripts>
+			<OnLoad method="OnLoad"/>
+			<OnShow method="OnShow"/>
+			<OnHide method="OnHide"/>
+			<OnDragStart method="OnDragStart"/>
+			<OnDragStop method="OnDragStop"/>
+		</Scripts>
+		<Frames>
+			<Button parentKey="ClosePanelButton" inherits="UIPanelCloseButtonDefaultAnchors"/>
+			<Frame parentKey="ScrollBox" inherits="WowScrollBoxList">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="8" y="-30"/>
+					<Anchor point="BOTTOMRIGHT" x="-22" y="18"/>
+				</Anchors>
+			</Frame>
+			<EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.ScrollBox" relativePoint="TOPRIGHT" x="4" y="0"/>
+					<Anchor point="BOTTOMLEFT" relativeKey="$parent.ScrollBox" relativePoint="BOTTOMRIGHT" x="4" y="0"/>
+				</Anchors>
+			</EventFrame>
+			<Button parentKey="Tab1" inherits="PanelTabButtonTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="12" y="2"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="Tab2" inherits="PanelTabButtonTemplate" id="2">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Tab1" relativePoint="TOPRIGHT" x="3" y="0"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="ClearButton" inherits="UIPanelButtonTemplate" hidden="true">
+				<Size x="90" y="22"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativePoint="BOTTOMRIGHT" x="-8" y="-1"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="ResizeButton" frameStrata="HIGH" frameLevel="600">
+				<Size x="32" y="12"/>
+				<Anchors>
+					<Anchor point="BOTTOM" x="0" y="5"/>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture atlas="lootroll-resizehandle" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Button>
+		</Frames>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="EmptyText" inherits="GameFontNormal" justifyH="CENTER" justifyV="TOP" hidden="true">
+					<Size x="280" y="0"/>
+					<Anchors>
+						<Anchor point="TOP" x="0" y="-60"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+	</Frame>
+</Ui>
