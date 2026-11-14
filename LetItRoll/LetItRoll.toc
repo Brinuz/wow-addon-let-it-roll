@@ -20,4 +20,5 @@ Preview.lua
 # UI.lua defines the mixins UI.xml's frames name, so it loads first.
 UI.lua
 UI.xml
+Minimap.lua
 Settings.lua

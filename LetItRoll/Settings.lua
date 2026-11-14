@@ -17,6 +17,13 @@ local function Register()
 		LIR.db, Settings.VarType.Boolean, L.AUTO_OPEN, true)
 	Settings.CreateCheckbox(category, autoOpen, L.AUTO_OPEN_TOOLTIP)
 
+	local minimap = Settings.RegisterAddOnSetting(category, "LETITROLL_SHOW_MINIMAP_BUTTON", "showMinimapButton",
+		LIR.db, Settings.VarType.Boolean, L.MINIMAP_BUTTON, true)
+	minimap:SetValueChangedCallback(function()
+		LIR:ApplyMinimapButton()
+	end)
+	Settings.CreateCheckbox(category, minimap, L.MINIMAP_BUTTON_TOOLTIP)
+
 	Settings.RegisterAddOnCategory(category)
 	LIR.settingsCategory = category
 end

@@ -22,11 +22,18 @@ LIR.L = {
 	REPLACE_POPUPS_TOOLTIP = "Roll in the Let It Roll window instead of Blizzard's Need/Greed popups.",
 	AUTO_OPEN = "Open when a roll starts",
 	AUTO_OPEN_TOOLTIP = "Show the window on the Rolling tab whenever an item is put up for a roll.",
+	MINIMAP_BUTTON = "Show minimap button",
+	MINIMAP_BUTTON_TOOLTIP = "A button on the edge of the minimap that opens the roll history.",
+	MINIMAP_LEFT_CLICK = "Left-click: open the history",
+	MINIMAP_RIGHT_CLICK = "Right-click: settings",
+	MINIMAP_DRAG = "Drag: move around the minimap",
 }
 
 local DEFAULTS = {
 	replacePopups = true,
 	autoOpen = true,
+	showMinimapButton = true,
+	minimapAngle = 225, -- degrees counter-clockwise from the right; bottom left
 	history = {},      -- newest first, entries shaped like EncounterLootDropInfo
 	archived = {},     -- key -> true, so a drop is never stored twice
 }
