@@ -13,6 +13,12 @@ local LINE_HEIGHT = 16
 local ROW_PADDING = 8
 local TIMER_FILL_WIDTH = 292
 
+-- The metal frame art is drawn at this size: thinner edges, corners and
+-- title bar than Blizzard's own windows, the window itself unchanged.
+local BORDER_SCALE = 0.85
+-- DefaultPanelFlatTemplate's background insets and title offset, at full size.
+local BG_LEFT, BG_TOP, BG_RIGHT, BG_BOTTOM, TITLE_TEXT_Y = 6, -20, -2, 2, -5
+
 local BUTTON_TOOLTIPS = {
 	[0] = PASS,
 	[1] = NEED,
@@ -274,8 +280,21 @@ StaticPopupDialogs.LETITROLL_CLEAR_HISTORY = {
 	hideOnEscape = true,
 }
 
+-- The nine-slice fills the window whatever its scale; its pieces shrink.
+-- The background, title and close button follow the thinner art.
+function LetItRollFrameMixin:ThinBorders()
+	self.NineSlice:SetScale(BORDER_SCALE)
+	self.Bg:ClearAllPoints()
+	self.Bg:SetPoint("TOPLEFT", BG_LEFT * BORDER_SCALE, BG_TOP * BORDER_SCALE)
+	self.Bg:SetPoint("BOTTOMRIGHT", BG_RIGHT * BORDER_SCALE, BG_BOTTOM * BORDER_SCALE)
+	self.TitleContainer.TitleText:SetPoint("TOP", 0, TITLE_TEXT_Y * BORDER_SCALE)
+	-- Its anchor offsets scale with it, so it stays on the corner.
+	self.ClosePanelButton:SetScale(BORDER_SCALE)
+end
+
 function LetItRollFrameMixin:OnLoad()
 	self.TitleContainer.TitleText:SetText(LIR.TITLE)
+	self:ThinBorders()
 	table.insert(UISpecialFrames, self:GetName())
 
 	self.Tab1:SetText(L.ROLLING)
