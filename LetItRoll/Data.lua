@@ -16,10 +16,16 @@ local Plain = LIR.Plain
 LIR.Data = {}
 local Data = LIR.Data
 
+-- A finished drop stays on the Rolling tab this long, to see who won.
+Data.FINISHED_LINGER = 10
+
 local rolls = {}      -- rollID -> { rollID, duration, link, itemID }
 local myPicks = {}    -- rollID -> state, set the moment you click
 local chatDrops = {}  -- itemID -> drop built from chat lines
 local seenInHistory = {} -- itemID -> GetTime() when C_LootHistory last listed it
+local shownPending = {}  -- key -> true once a drop was on the Rolling tab unfinished
+local finishedAt = {}    -- key -> GetTime() when a shown drop finished
+local finishedChat = {}  -- key -> entry for a finished chat drop, while it lingers
 
 local CHAT_DROP_TIMEOUT = 300  -- seconds before an unresolved chat drop is dropped
 local HISTORY_OVERLAP = 120    -- seconds a C_LootHistory item shadows chat lines
@@ -38,6 +44,21 @@ end
 
 local function IsResolved(drop)
 	return drop.winner ~= nil or drop.allPassed
+end
+
+-- Called when a drop the Rolling tab showed gets its winner. One refresh
+-- after the linger takes it off the tab.
+local function MarkFinished(key)
+	if not finishedAt[key] then
+		finishedAt[key] = GetTime()
+		C_Timer.After(Data.FINISHED_LINGER, function()
+			Data:Changed()
+		end)
+	end
+end
+
+local function IsLingering(key)
+	return finishedAt[key] and GetTime() - finishedAt[key] < Data.FINISHED_LINGER
 end
 
 -- ---------------------------------------------------------------- change notification
@@ -122,7 +143,8 @@ local function IsRolledOn(drop)
 	return false
 end
 
--- Pending drops (for the Rolling tab); resolved ones are archived on the way.
+-- Pending drops (for the Rolling tab); resolved ones are archived on the way,
+-- and stay listed a few seconds when the tab showed them rolling.
 local function ScanLootHistory()
 	local pending = {}
 	if not C_LootHistory then
@@ -137,9 +159,17 @@ local function ScanLootHistory()
 				seenInHistory[itemID] = now
 			end
 			local key = HistoryKey(encounter.encounterID, drop)
-			if IsResolved(drop) or HasExpired(drop) then
+			local resolved = IsResolved(drop)
+			local finished = resolved or HasExpired(drop)
+			if finished then
 				Archive(key, drop, encounter.encounterName)
+				if resolved and shownPending[key] then
+					MarkFinished(key)
+				end
 			elseif IsRolledOn(drop) then
+				shownPending[key] = true
+			end
+			if (not finished and shownPending[key]) or (resolved and IsLingering(key)) then
 				table.insert(pending, {
 					key = key,
 					drop = drop,
@@ -262,7 +292,10 @@ LIR.Chat:Listen(function(kind, player, link, state, roll)
 		chat.winnerName = player
 		chat.allPassed = kind == "allPassed"
 		chatDrops[itemID] = nil
-		Archive(chat.key, ChatDropAsDrop(chat))
+		local drop = ChatDropAsDrop(chat)
+		Archive(chat.key, drop)
+		MarkFinished(chat.key)
+		finishedChat[chat.key] = { key = chat.key, drop = drop, itemID = itemID }
 	end
 	Data:Changed()
 end)
@@ -322,6 +355,16 @@ function Data:GetActive()
 			table.insert(entries, { key = chat.key, drop = ChatDropAsDrop(chat), itemID = itemID })
 		end
 	end
+	for key, entry in pairs(finishedChat) do
+		if IsLingering(key) then
+			table.insert(entries, entry)
+		else
+			finishedChat[key] = nil
+		end
+	end
+	for _, entry in ipairs(entries) do
+		entry.finishedAt = finishedAt[entry.key]
+	end
 
 	-- Each of your roll IDs joins the first entry for the same item that has none.
 	local rollIDs = {}
@@ -367,6 +410,10 @@ end
 function Data:GetTimeLeft(entry)
 	if entry.timeLeft then
 		return entry.timeLeft
+	end
+	-- A finished drop: the time left before it leaves the tab.
+	if entry.finishedAt then
+		return Clamp(1 - (GetTime() - entry.finishedAt) / self.FINISHED_LINGER, 0, 1)
 	end
 	if entry.rollID and rolls[entry.rollID] and entry.duration and entry.duration > 0 then
 		return Clamp(GetLootRollTimeLeft(entry.rollID) / entry.duration, 0, 1)

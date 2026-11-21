@@ -12,7 +12,7 @@ local Preview = LIR.Preview
 local ITEM_IDS = { 6448, 7719, 13340, 2244 }
 local DURATION = 40     -- seconds each sample roll lasts
 local STAGGER = 4       -- seconds between sample drops
-local LINGER = 4        -- seconds a finished drop stays on the Rolling tab
+local LINGER = LIR.Data.FINISHED_LINGER -- seconds a finished drop stays on the Rolling tab
 
 local GROUP = {
 	{ playerName = "Aldric", playerClass = "WARRIOR" },
@@ -179,7 +179,7 @@ function Preview:GetActive()
 						drop = drop,
 						canNeed = true,
 						canGreed = true,
-						timeLeft = finished and 0 or Clamp(1 - elapsed / DURATION, 0, 1),
+						timeLeft = Clamp(finished and 1 - (elapsed - sample.finishedAt) / LINGER or 1 - elapsed / DURATION, 0, 1),
 					})
 				end
 			end

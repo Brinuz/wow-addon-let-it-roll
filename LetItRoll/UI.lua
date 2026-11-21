@@ -70,6 +70,45 @@ local function PickedInfos(drop)
 	return picked
 end
 
+-- The cards' tooltip: the item, each pick and who is left. Replaces
+-- Blizzard's, which measures its lines; during an encounter the names are
+-- secret, and measuring them from an addon's frame is an error.
+local function DropTooltip(card)
+	local drop = card.dropInfo
+	if not drop then
+		return
+	end
+	GameTooltip:SetOwner(card, "ANCHOR_RIGHT", -7, -6)
+	GameTooltip:SetHyperlink(drop.itemHyperlink)
+	if drop.allPassed then
+		GameTooltip_AddBlankLineToTooltip(GameTooltip)
+		GameTooltip_AddErrorLine(GameTooltip, CreateAtlasMarkup("lootroll-icon-pass", 14, 14) .. " " .. LOOT_HISTORY_ALL_PASSED)
+	else
+		local picked = PickedInfos(drop)
+		if #picked > 0 then
+			GameTooltip_AddBlankLineToTooltip(GameTooltip)
+		end
+		for _, info in ipairs(picked) do
+			local icon = ROLL_ICONS[info.state]
+			local text = icon and CreateAtlasMarkup(icon, 14, 14) .. " " or ""
+			if info.roll then
+				text = text .. info.roll .. " "
+			end
+			text = text .. ClassColoredName(info)
+			if info.isWinner then
+				text = text .. " " .. CreateAtlasMarkup("lootroll-icon-checkmark")
+			end
+			GameTooltip_AddHighlightLine(GameTooltip, text)
+		end
+		local waiting = WaitingOnText(drop)
+		if waiting then
+			GameTooltip_AddBlankLineToTooltip(GameTooltip)
+			GameTooltip_AddNormalLine(GameTooltip, waiting, true)
+		end
+	end
+	GameTooltip:Show()
+end
+
 -- Measures wrapped text so a row's height is known before it is built.
 -- Kept shown but invisible: a hidden font string may not be laid out, and
 -- then reports one line however long the text.
@@ -113,6 +152,7 @@ function LetItRollActiveRowMixin:Init(entry)
 	-- knows which drop it shows.
 	self.Card.encounterID = entry.encounterID
 	self.Card.lootListKey = entry.lootListKey
+	self.Card.SetTooltip = DropTooltip
 	self.Card:Init(drop)
 	self.Card.Item:SetScript("OnEnter", function(item)
 		GameTooltip:SetOwner(item, "ANCHOR_RIGHT")
@@ -217,13 +257,23 @@ function LetItRollActiveRowMixin:SetupButtons()
 end
 
 function LetItRollActiveRowMixin:UpdateTimer()
+	-- Once finished, the bar counts down the seconds until the drop leaves.
 	local left = self.entry and LIR.Data:GetTimeLeft(self.entry)
-	if not left or IsResolved(self.entry.drop) then
+	if not left then
 		self.Timer.Fill:Hide()
 		return
 	end
-	self.Timer.Fill:Show()
-	self.Timer.Fill:SetWidth(math.max(1, TIMER_FILL_WIDTH * left))
+	-- Green once the roll is over.
+	local fill = self.Timer.Fill
+	local over = IsResolved(self.entry.drop)
+	fill:SetDesaturated(over)
+	if over then
+		fill:SetVertexColor(GREEN_FONT_COLOR:GetRGB())
+	else
+		fill:SetVertexColor(1, 1, 1)
+	end
+	fill:Show()
+	fill:SetWidth(math.max(1, TIMER_FILL_WIDTH * left))
 end
 
 function LetItRollActiveRowMixin:OnUpdate()
@@ -237,6 +287,7 @@ LetItRollHistoryRowMixin = {}
 function LetItRollHistoryRowMixin:InitRecord(record)
 	self.encounterID = nil
 	self.lootListKey = nil
+	self.SetTooltip = DropTooltip
 	self:Init(record)
 
 	local winner = record.winner
