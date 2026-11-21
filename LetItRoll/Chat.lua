@@ -19,18 +19,30 @@ local function Fire(kind, player, link, state, roll)
 	end
 end
 
+-- Forever's lines start with a link to the loot history entry, which takes
+-- the first format argument: "|HlootHistory:%d|h[Loot]|h: %s won: %s".
+-- It is cut from formats and lines alike, so the arguments keep their
+-- classic order.
+local PREFIX_FORMAT = "^|HlootHistory:%%d|h.-|h: ?"
+local PREFIX_TEXT = "^|HlootHistory:%d+|h.-|h: ?"
+
 -- Turns "%s has selected Need for: %s" (or "%2$s ... %1$s") into an anchored
 -- Lua pattern, and records which capture holds which format argument.
 local function MakePattern(format)
 	if type(format) ~= "string" then
 		return nil
 	end
-	local order, nextArg = {}, 1
+	local shift = 0
+	if format:find(PREFIX_FORMAT) then
+		format = format:gsub(PREFIX_FORMAT, "")
+		shift = 1
+	end
+	local order, nextArg = {}, 1 + shift
 	local parts, last = {}, 1
 	for start, position, kind, finish in format:gmatch("()%%(%d?)%$?([sd])()") do
 		table.insert(parts, (format:sub(last, start - 1):gsub("[%%%(%)%.%+%-%*%?%[%]%^%$]", "%%%0")))
 		table.insert(parts, kind == "d" and "(%d+)" or "(.+)")
-		table.insert(order, tonumber(position) or nextArg)
+		table.insert(order, (tonumber(position) or nextArg) - shift)
 		nextArg = nextArg + 1
 		last = finish
 	end
@@ -98,6 +110,7 @@ LIR:On("CHAT_MSG_LOOT", function(text)
 		LIR.Chat.secretLines = LIR.Chat.secretLines + 1
 		return
 	end
+	text = text:gsub(PREFIX_TEXT, "")
 	for _, rule in ipairs(Rules()) do
 		local args = Match(rule.p, text)
 		if args then

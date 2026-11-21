@@ -71,8 +71,11 @@ local function PickedInfos(drop)
 end
 
 -- Measures wrapped text so a row's height is known before it is built.
+-- Kept shown but invisible: a hidden font string may not be laid out, and
+-- then reports one line however long the text.
 local measure = UIParent:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
-measure:Hide()
+measure:SetAlpha(0)
+measure:SetPoint("TOPLEFT", UIParent, "BOTTOMRIGHT")
 measure:SetWidth(284)
 measure:SetWordWrap(true)
 

@@ -31,8 +31,9 @@ local ROLL_TYPE_STATE = {
 	[4] = State.Transmog,
 }
 
+-- Only real item links: a bare number would be read as an item ID.
 local function ItemID(link)
-	return link and C_Item.GetItemInfoInstant(link)
+	return link and link:find("|Hitem:") and C_Item.GetItemInfoInstant(link)
 end
 
 local function IsResolved(drop)
@@ -104,6 +105,23 @@ local function HasExpired(drop)
 	return C_LootHistory.GetLootHistoryTime() > drop.startTime + drop.duration + 5
 end
 
+-- C_LootHistory also lists drops below the loot threshold (common items),
+-- which nobody rolls on: they never get a winner. A drop counts once its
+-- quality reaches the threshold, or anyone picks on it. Quality is unknown
+-- until the item is cached; such drops are kept.
+local function IsRolledOn(drop)
+	local quality = C_Item.GetItemQualityByID(drop.itemHyperlink)
+	if not quality or quality >= GetLootThreshold() then
+		return true
+	end
+	for _, info in ipairs(drop.rollInfos) do
+		if info.state ~= State.NoRoll then
+			return true
+		end
+	end
+	return false
+end
+
 -- Pending drops (for the Rolling tab); resolved ones are archived on the way.
 local function ScanLootHistory()
 	local pending = {}
@@ -121,7 +139,7 @@ local function ScanLootHistory()
 			local key = HistoryKey(encounter.encounterID, drop)
 			if IsResolved(drop) or HasExpired(drop) then
 				Archive(key, drop, encounter.encounterName)
-			else
+			elseif IsRolledOn(drop) then
 				table.insert(pending, {
 					key = key,
 					drop = drop,
@@ -389,5 +407,5 @@ function LIR:DebugDump()
 	for _ in pairs(chatDrops) do chats = chats + 1 end
 	self:Print(("open roll IDs: %d, chat-tracked drops: %d, hidden chat lines: %d, saved history: %d")
 		:format(open, chats, LIR.Chat.secretLines, #LIR.db.history))
-	self:Print("default popups replaced:", tostring(LIR.db.replacePopups))
+	self:Print("default popups replaced:", tostring(LIR.db.replacePopups), " loot threshold:", GetLootThreshold())
 end
